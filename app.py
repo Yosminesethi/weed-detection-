@@ -1,3 +1,4 @@
+print("APP STARTED SUCCESSFULLY")
 from flask import Flask, render_template, request, jsonify
 import os
 import uuid
