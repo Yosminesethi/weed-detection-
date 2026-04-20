@@ -3,8 +3,6 @@ import os
 import uuid
 import base64
 import cv2
-
-# YOLO
 from ultralytics import YOLO
 
 app = Flask(__name__)
@@ -12,19 +10,19 @@ app = Flask(__name__)
 UPLOAD_FOLDER = "static/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# 🔥 Load YOLO model
-yolo_model = YOLO("yolov8n.pt")
+# Load YOLO model
+model = YOLO("yolov8n.pt")
 
 
-# 🔥 YOLO detection function
+# 🔥 YOLO detection
 def detect_weeds(image_path):
-    results = yolo_model(image_path)
+    results = model(image_path)
 
     label = "No weed detected"
     action = "✅ Healthy crop"
 
     for r in results:
-        img = r.plot()  # bounding boxes
+        img = r.plot()
 
         if len(r.boxes) > 0:
             label = "Weed detected"
@@ -53,7 +51,6 @@ def index():
             image_path = os.path.join(UPLOAD_FOLDER, filename)
             file.save(image_path)
 
-            # 🔥 YOLO detection
             image_path, prediction, action = detect_weeds(image_path)
 
     return render_template(
@@ -64,13 +61,12 @@ def index():
     )
 
 
-# 🔥 CAMERA CAPTURE ROUTE
+# 🔥 CAMERA API
 @app.route("/capture", methods=["POST"])
 def capture():
     data = request.get_json()
     image_data = data["image"]
 
-    # Decode base64
     image_data = image_data.split(",")[1]
     image_bytes = base64.b64decode(image_data)
 
@@ -80,7 +76,6 @@ def capture():
     with open(image_path, "wb") as f:
         f.write(image_bytes)
 
-    # 🔥 YOLO detection
     output_path, prediction, action = detect_weeds(image_path)
 
     return jsonify({
@@ -90,6 +85,7 @@ def capture():
     })
 
 
-# 🔥 RUN APP (IMPORTANT FOR RENDER)
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    import os
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
