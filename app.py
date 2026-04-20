@@ -1,4 +1,3 @@
-print("APP STARTED SUCCESSFULLY")
 from flask import Flask, render_template, request, jsonify
 import os
 import uuid
@@ -15,7 +14,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 model = YOLO("yolov8n.pt")
 
 
-# 🔥 YOLO detection
+# 🔥 Detection function
 def detect_weeds(image_path):
     results = model(image_path)
 
@@ -26,8 +25,8 @@ def detect_weeds(image_path):
         img = r.plot()
 
         if len(r.boxes) > 0:
-            label = "Weed detected"
-            action = "⚠️ Weed detected"
+            label = "⚠️ Weed detected"
+            action = "Remove weed"
 
         output_path = os.path.join(
             UPLOAD_FOLDER, str(uuid.uuid4()) + ".jpg"
@@ -45,7 +44,7 @@ def index():
     image_path = ""
 
     if request.method == "POST":
-        file = request.files["file"]
+        file = request.files.get("file")
 
         if file:
             filename = str(uuid.uuid4()) + ".jpg"
@@ -62,12 +61,13 @@ def index():
     )
 
 
-# 🔥 CAMERA API
+# 🔥 CAMERA ROUTE
 @app.route("/capture", methods=["POST"])
 def capture():
     data = request.get_json()
     image_data = data["image"]
 
+    # Decode image
     image_data = image_data.split(",")[1]
     image_bytes = base64.b64decode(image_data)
 
@@ -80,13 +80,13 @@ def capture():
     output_path, prediction, action = detect_weeds(image_path)
 
     return jsonify({
-        "image_path": output_path,
+        "image_path": "/" + output_path,
         "prediction": prediction,
         "action": action
     })
 
 
+# 🔥 RUN
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
